@@ -1,0 +1,23 @@
+[project]
+name = "reelcast"
+version = "0.0.1"
+description = "AI機能性音楽の一気通貫パイプライン（YouTube/Instagram）"
+requires-python = ">=3.11"
+dependencies = []  # 骨格は標準ライブラリのみ。重い依存は各工程の実装時(Phase 1)に追加。
+
+[project.optional-dependencies]
+# Phase 1 で工程を実装する際に、選定したツールに応じて追加する想定:
+# compose = ["moviepy"]                                   # ffmpeg本体は別途 brew install ffmpeg
+# youtube = ["google-api-python-client", "google-auth-oauthlib"]
+# llm     = ["anthropic"]                                 # 企画/メタデータ生成
+dev = ["pytest"]
+
+[project.scripts]
+reelcast = "reelcast.cli:main"
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["src"]

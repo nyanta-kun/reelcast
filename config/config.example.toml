@@ -1,0 +1,18 @@
+# reelcast 設定例。`config/config.toml` にコピーして使う（config.toml は git 管理外）。
+# `reelcast init` が未作成なら自動でコピーする。
+
+[paths]
+# 生成物・素材・DB の置き場（相対パスはリポジトリルート基準）
+data_dir = "data"
+
+[channel]
+name = "（チャンネル名・未定）"
+persona = "完全フェイスレス・テキスト人格のみ・バーチャルレーベル名義"
+
+[pipeline]
+# 公開は必ず人間承認ゲートを通す（方針: 完全自動公開は採らない）
+human_review = true
+
+# 投稿頻度の目安（Phase 2 の運用で参照）
+target_longform_per_week = 2
+target_shorts_per_week = 3
