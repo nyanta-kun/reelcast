@@ -26,15 +26,26 @@
 | Udio | $10 / 商用は$30 | ✓ | ○($30〜) | ✗ DL停止中(2025/10〜) | △ | 除外（DL不可） |
 | 第三者Suno API | ~$19 | ✓ | 主張のみ | ✓ | △ | 除外（非公式・規約リスク） |
 
-## 画像生成 — 保留（キャラ設計と一緒に判断）
+## 画像生成 — 決定: **Gemini Nano Banana 2**（参照画像でキャラ固定）
 
-固定キャラの画風・ツールが未定のため、画像生成ツールはキャラ設計（タスク #7）と合わせて決定する。候補は下記。背景は低頻度・使い回し、キャラは一度だけ高品質に作る方針。
+### 決定内容
+- **静止画＝Gemini Nano Banana 2**。猫の正典 `assets/brand/cat_ref_v1.png` を**参照画像**に与え、各世界を一貫生成。キャラ一貫性が最大の強み。
+- **動き＝別工程・微細ループ**（ffmpeg の compose 工程）。フルアニメは不採用。
+- 画風＝**日本アニメ調**で確定。
 
-| 候補 | コスト | 商用利用 | 備考 |
+### 根拠と注意（⚠️要再確認）
+- 商用利用OK・Google は出力の所有権を主張しない（コンテンツポリシー順守前提）。
+- ⚠️ **無料 gemini.google.com 画像は可視透かし（Geminiロゴ）付き → 本番フレーム不可**。透かし無しは **Gemini API（従量・自動化可）** か Gemini Ultra。→ 設計探索は無料アプリ、本番は API。**「必要な一点だけ最小有料」の例外**（音楽と同様）。
+- SynthID（不可視透かし）常時付与。商用に支障なく、**AI開示方針と整合**。
+- Leonardo Character Reference は有料（$12〜 Apprentice）で機能は同等以上だが、Nano Banana が使えるため不採用。ローカルSD/Firefly も候補から外す。
+
+### 比較（参考・不採用分）
+| 候補 | コスト | キャラ固定 | 備考 |
 |---|---|---|---|
-| ローカル Stable Diffusion | 無料 | ✓ Community License（年商<$1M 自己ホスト無料） | フルコントロール。Mac セットアップ・生成時間の壁 |
-| Leonardo AI 無料枠 | 無料（150トークン/日） | ✓ 無料枠も非独占RF商用 | 省力。低頻度背景に十分 |
-| Adobe Firefly | 無料枠あり | ◎ 商用ライセンス明確（ライセンス学習データ） | Content安全性重視向き |
+| **Gemini Nano Banana 2** | 無料(透かし)/API従量 | ◎ 参照画像 | **採用** |
+| Leonardo（Apprentice） | $12〜 | ◎ Character Reference | 不採用（Nano Bananaで足りる） |
+| ローカル Stable Diffusion | 無料 | △ 要LoRA等 | 不採用（セットアップ重い） |
+| Adobe Firefly | 無料枠 | △ | 不採用 |
 
 ## Sources（2026-05 調査）
 - [Suno Pricing（公式）](https://suno.com/pricing)

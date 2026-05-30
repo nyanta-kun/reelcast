@@ -1,4 +1,4 @@
-"""③④映像素材: 固定キャラ（資産）を確認し、テーマ別の背景ビジュアルを生成。"""
+"""③④映像素材: 固定キャラ（猫）を参照しつつ、テーマ別の世界（背景）を生成。"""
 from __future__ import annotations
 
 from ..base import Stage, StageContext, StageResult
@@ -6,10 +6,12 @@ from ...state.models import Video, VideoStatus
 
 
 class VisualsStage(Stage):
-    """固定キャラ資産（``data/assets/character/``）の存在を確認し、
-    テーマに合う背景を無料/低コストの画像生成で用意する（商用可ツール）。
+    """Gemini Nano Banana 2 に猫の正典（assets/brand/cat_ref_v1.png）を参照画像として与え、
+    テーマ（世界）に合う1枚絵を生成して ``data/assets/backgrounds/<id>/`` に保存する。
 
-    キャラは毎回生成しない（一貫性が崩れるため）。背景のみ差し替える。
+    - 猫は固定（毎回生成しない＝一貫性が崩れるため）。参照画像でキャラ固定する。
+    - 本番フレームは可視透かし回避のため Gemini API を使う（無料アプリは透かし付き）。
+    - 動き（モーション）は本工程では作らない。compose 工程で微細ループを付与する。
     """
 
     name = "visuals"
@@ -17,4 +19,6 @@ class VisualsStage(Stage):
     produces = VideoStatus.VISUALS_READY
 
     def run(self, video: Video, ctx: StageContext) -> StageResult:
-        raise NotImplementedError("Phase 1: 固定キャラ確認＋背景生成を実装する")
+        raise NotImplementedError(
+            "Phase 1: Gemini API で猫参照固定の世界画像を生成・保存する"
+        )
