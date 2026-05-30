@@ -10,14 +10,15 @@ class VideoStatus(str, Enum):
 
     NEW = "new"                          # 登録直後（テーマ未確定）
     IDEATED = "ideated"                  # ①テーマ確定
-    MUSIC_READY = "music_ready"          # ②音楽生成済み
-    VISUALS_READY = "visuals_ready"      # ③④キャラ確認＋背景生成済み
+    MUSIC_READY = "music_ready"          # ②音楽（取り込み・検証）済み
+    VISUALS_READY = "visuals_ready"      # ③④キャラ＋背景（世界画像）生成済み
     COMPOSED = "composed"                # ⑤合成・長尺化済み
     THUMBNAILED = "thumbnailed"          # ⑥サムネ生成済み
-    AWAITING_REVIEW = "awaiting_review"  # ⑦メタ生成済み → 人間承認ゲート待ち
+    SHORTS_READY = "shorts_ready"        # ⑦ショート切り出し済み（レビュー前に用意）
+    AWAITING_REVIEW = "awaiting_review"  # ⑧メタ生成済み → 人間承認ゲート待ち
     APPROVED = "approved"                # 人間が承認
     PUBLISHED = "published"              # ⑨公開（予約公開）済み
-    DONE = "done"                        # ⑩ショート切り出しまで完了
+    DONE = "done"                        # 完了（IG等の手動投稿まで含む）
     FAILED = "failed"                    # 工程が失敗（要対応）
     ON_HOLD = "on_hold"                  # 保留（未実装工程含む）
 
@@ -30,6 +31,7 @@ PIPELINE_ORDER: list[VideoStatus] = [
     VideoStatus.VISUALS_READY,
     VideoStatus.COMPOSED,
     VideoStatus.THUMBNAILED,
+    VideoStatus.SHORTS_READY,
     VideoStatus.AWAITING_REVIEW,
     VideoStatus.APPROVED,
     VideoStatus.PUBLISHED,

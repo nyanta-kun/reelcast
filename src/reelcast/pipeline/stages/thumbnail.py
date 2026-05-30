@@ -1,16 +1,51 @@
-"""⑥サムネ生成: 世界観に沿ったサムネイルを生成。"""
+"""⑥サムネ生成: 世界画像から 1280x720 サムネを生成（タイトル焼き込みは Pillow で best-effort）。"""
 from __future__ import annotations
 
+from pathlib import Path
+
 from ..base import Stage, StageContext, StageResult
+from ...media.render import IMAGE_EXTS, FFmpegError, find_font, make_thumbnail
 from ...state.models import Video, VideoStatus
 
 
 class ThumbnailStage(Stage):
-    """固定キャラ・背景を使い、SEO/クリック率を意識したサムネを生成。"""
-
     name = "thumbnail"
     requires = VideoStatus.COMPOSED
     produces = VideoStatus.THUMBNAILED
 
+    def _out_path(self, video: Video, ctx: StageContext) -> Path:
+        return ctx.config.paths.renders_dir / str(video.id) / "thumbnail.png"
+
+    def _world_image(self, video: Video, ctx: StageContext) -> Path | None:
+        d = ctx.config.paths.backgrounds_dir / str(video.id)
+        if not d.is_dir():
+            return None
+        imgs = sorted(p for p in d.iterdir() if p.suffix.lower() in IMAGE_EXTS)
+        return imgs[0] if imgs else None
+
+    def is_satisfied(self, video: Video, ctx: StageContext) -> bool:
+        return self._out_path(video, ctx).exists()
+
     def run(self, video: Video, ctx: StageContext) -> StageResult:
-        raise NotImplementedError("Phase 1: サムネ生成を実装する")
+        image = self._world_image(video, ctx)
+        if image is None:
+            return StageResult(False, "背景画像が見つかりません（assets/backgrounds/<id>/）")
+        out = self._out_path(video, ctx)
+        font = find_font()
+
+        # Pillow があればタイトル入りで生成。無ければ ffmpeg で画像のみ。
+        if font:
+            try:
+                from ...media.thumbnail import make_thumbnail_text
+
+                make_thumbnail_text(image, out, title=video.title, font=font)
+                return StageResult(True, f"サムネ生成（タイトル入り）: {out}")
+            except ImportError:
+                pass  # Pillow 未導入 → 画像のみにフォールバック
+
+        try:
+            make_thumbnail(image, out)
+        except FFmpegError as e:
+            return StageResult(False, str(e))
+        note = "フォント未検出" if not font else "Pillow未導入"
+        return StageResult(True, f"サムネ生成（{note}のためテキストなし）: {out}")

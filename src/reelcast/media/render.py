@@ -62,6 +62,68 @@ def concat_audio(tracks: list[Path], out: Path) -> Path:
     return out
 
 
+def find_font() -> str | None:
+    """drawtext 用のフォントを探す（日本語対応を優先）。見つからなければ None。"""
+    candidates = [
+        "/System/Library/Fonts/ヒラギノ角ゴシック W6.ttc",
+        "/System/Library/Fonts/Hiragino Sans GB.ttc",
+        "/System/Library/Fonts/ヒラギノ丸ゴ ProN W4.ttc",
+        "/Library/Fonts/Arial Unicode.ttf",
+        "/System/Library/Fonts/Supplemental/Arial Unicode.ttf",
+        "/System/Library/Fonts/Helvetica.ttc",
+        "/System/Library/Fonts/Supplemental/Arial.ttf",
+    ]
+    for c in candidates:
+        if Path(c).exists():
+            return c
+    return None
+
+
+def make_thumbnail(image: Path, out: Path, *, width: int = 1280, height: int = 720) -> Path:
+    """世界画像から 1280x720 のサムネ（テキストなし・cover クロップ）を生成。
+
+    テキスト焼き込みは media/thumbnail.py（Pillow）で行う。
+    （Homebrew の ffmpeg は drawtext を含まないことがあるため ffmpeg では文字を描かない）
+    """
+    ffmpeg = _require("ffmpeg")
+    out.parent.mkdir(parents=True, exist_ok=True)
+    vf = f"scale={width}:{height}:force_original_aspect_ratio=increase,crop={width}:{height}"
+    cmd = [ffmpeg, "-y", "-i", str(image), "-vf", vf, "-frames:v", "1", str(out)]
+    proc = subprocess.run(cmd, capture_output=True, text=True)
+    if proc.returncode != 0:
+        raise FFmpegError(f"サムネ生成に失敗:\n{proc.stderr[-2000:]}")
+    return out
+
+
+def make_short(
+    src: Path,
+    out: Path,
+    *,
+    start: float = 0.0,
+    duration: float = 30.0,
+    width: int = 1080,
+    height: int = 1920,
+    crf: int = 20,
+    preset: str = "veryfast",
+) -> Path:
+    """長尺(16:9)から縦型(9:16)ショートを切り出す。"""
+    ffmpeg = _require("ffmpeg")
+    out.parent.mkdir(parents=True, exist_ok=True)
+    vf = f"scale={width}:{height}:force_original_aspect_ratio=increase,crop={width}:{height},format=yuv420p"
+    cmd = [
+        ffmpeg, "-y",
+        "-ss", f"{start:.3f}", "-i", str(src), "-t", f"{duration:.3f}",
+        "-vf", vf,
+        "-c:v", "libx264", "-preset", preset, "-crf", str(crf), "-pix_fmt", "yuv420p",
+        "-c:a", "aac", "-b:a", "192k", "-movflags", "+faststart",
+        str(out),
+    ]
+    proc = subprocess.run(cmd, capture_output=True, text=True)
+    if proc.returncode != 0:
+        raise FFmpegError(f"ショート切り出しに失敗:\n{proc.stderr[-2000:]}")
+    return out
+
+
 def render_ambient_loop(
     image: Path,
     audio: Path,

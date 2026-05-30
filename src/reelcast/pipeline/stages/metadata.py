@@ -13,7 +13,7 @@ class MetadataStage(Stage):
     """
 
     name = "metadata"
-    requires = VideoStatus.THUMBNAILED
+    requires = VideoStatus.SHORTS_READY
     produces = VideoStatus.AWAITING_REVIEW
 
     def run(self, video: Video, ctx: StageContext) -> StageResult:
