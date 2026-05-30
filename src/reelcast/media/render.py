@@ -62,6 +62,17 @@ def concat_audio(tracks: list[Path], out: Path) -> Path:
     return out
 
 
+def extract_frame(video: Path, out: Path, *, t: float = 1.0) -> Path:
+    """動画から1フレームを静止画として書き出す（サムネのベース等に使う）。"""
+    ffmpeg = _require("ffmpeg")
+    out.parent.mkdir(parents=True, exist_ok=True)
+    cmd = [ffmpeg, "-y", "-ss", f"{t:.3f}", "-i", str(video), "-frames:v", "1", str(out)]
+    proc = subprocess.run(cmd, capture_output=True, text=True)
+    if proc.returncode != 0:
+        raise FFmpegError(f"フレーム抽出に失敗:\n{proc.stderr[-2000:]}")
+    return out
+
+
 def find_font() -> str | None:
     """drawtext 用のフォントを探す（日本語対応を優先）。見つからなければ None。"""
     candidates = [

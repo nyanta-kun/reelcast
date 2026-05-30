@@ -18,6 +18,13 @@ from ...state.models import Video, VideoStatus
 AUDIO_EXTS = {".mp3", ".wav", ".flac", ".m4a", ".aac", ".ogg"}
 CAT_LAYER = "cat.png"
 
+# video.metadata["compose"] で上書きできる配置・動きパラメータ
+COMPOSE_OPTS = {
+    "cat_scale", "cat_cx", "cat_cy",
+    "breathing_amp", "breathing_cycles", "bob_px", "bob_cycles",
+    "parallax_px", "loop_seconds", "fps",
+}
+
 
 class ComposeStage(Stage):
     name = "compose"
@@ -67,8 +74,9 @@ class ComposeStage(Stage):
             audio = tracks[0] if len(tracks) == 1 else concat_audio(tracks, out.parent / "_audio.m4a")
             if cat is not None:
                 # 2.5D レイヤーアニメ：短尺ループ → 全長へ無劣化ループ＋音源
+                opts = {k: v for k, v in (video.metadata or {}).get("compose", {}).items() if k in COMPOSE_OPTS}
                 loop = out.parent / "_loop.mp4"
-                render_loop_clip(bg, cat, loop)
+                render_loop_clip(bg, cat, loop, **opts)
                 loop_to_full(loop, audio, out)
                 mode = "レイヤーアニメ（寝息＋頭振り＋パララックス）"
             else:

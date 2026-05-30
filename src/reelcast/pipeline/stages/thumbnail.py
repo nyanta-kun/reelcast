@@ -4,7 +4,7 @@ from __future__ import annotations
 from pathlib import Path
 
 from ..base import Stage, StageContext, StageResult
-from ...media.render import IMAGE_EXTS, FFmpegError, find_font, make_thumbnail
+from ...media.render import IMAGE_EXTS, FFmpegError, extract_frame, find_font, make_thumbnail
 from ...state.models import Video, VideoStatus
 
 
@@ -23,13 +23,24 @@ class ThumbnailStage(Stage):
         imgs = sorted(p for p in d.iterdir() if p.suffix.lower() in IMAGE_EXTS)
         return imgs[0] if imgs else None
 
+    def _base_image(self, video: Video, ctx: StageContext) -> Path | None:
+        """サムネの元画像。合成済み長尺があればそのフレーム（猫が写る）、無ければ背景画像。"""
+        long = ctx.config.paths.renders_dir / str(video.id) / "long.mp4"
+        if long.exists():
+            base = ctx.config.paths.renders_dir / str(video.id) / "_thumb_base.png"
+            try:
+                return extract_frame(long, base, t=1.0)
+            except FFmpegError:
+                pass
+        return self._world_image(video, ctx)
+
     def is_satisfied(self, video: Video, ctx: StageContext) -> bool:
         return self._out_path(video, ctx).exists()
 
     def run(self, video: Video, ctx: StageContext) -> StageResult:
-        image = self._world_image(video, ctx)
+        image = self._base_image(video, ctx)
         if image is None:
-            return StageResult(False, "背景画像が見つかりません（assets/backgrounds/<id>/）")
+            return StageResult(False, "元画像が見つかりません（assets/backgrounds/<id>/ か long.mp4）")
         out = self._out_path(video, ctx)
         font = find_font()
 
