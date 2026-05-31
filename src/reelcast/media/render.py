@@ -13,6 +13,7 @@ import subprocess
 from pathlib import Path
 
 IMAGE_EXTS = {".png", ".jpg", ".jpeg", ".webp"}
+VIDEO_EXTS = {".mp4", ".mov", ".webm", ".mkv", ".m4v"}
 
 
 class FFmpegError(RuntimeError):
@@ -132,6 +133,36 @@ def make_short(
     proc = subprocess.run(cmd, capture_output=True, text=True)
     if proc.returncode != 0:
         raise FFmpegError(f"ショート切り出しに失敗:\n{proc.stderr[-2000:]}")
+    return out
+
+
+def seamless_loop(src: Path, out: Path, *, crossfade: float = 1.0, crf: int = 20, preset: str = "veryfast") -> Path:
+    """i2v クリップ等を、末尾と先頭をクロスフェードして継ぎ目のないループに変換。
+
+    出力長 = 入力長 - crossfade。アンビエント（雨・煙・呼吸）の動きはこの手法でよく馴染む。
+    入力が短すぎる場合はそのままコピー（無音化）して返す。
+    """
+    ffmpeg = _require("ffmpeg")
+    out.parent.mkdir(parents=True, exist_ok=True)
+    d = probe_duration(src)
+    c = min(crossfade, d / 3.0) if d > 0 else crossfade
+    if d <= 0 or d <= 2 * c:
+        cmd = [ffmpeg, "-y", "-i", str(src), "-an",
+               "-c:v", "libx264", "-preset", preset, "-crf", str(crf), "-pix_fmt", "yuv420p", str(out)]
+    else:
+        loop_len = d - c
+        fc = (
+            f"[0:v]trim=0:{c:.3f},setpts=PTS-STARTPTS,format=yuva420p,fade=t=in:st=0:d={c:.3f}:alpha=1[head];"
+            f"[0:v]trim={loop_len:.3f}:{d:.3f},setpts=PTS-STARTPTS,format=yuva420p,fade=t=out:st=0:d={c:.3f}:alpha=1[tail];"
+            f"[tail][head]overlay=format=auto[seam];"
+            f"[0:v]trim={c:.3f}:{loop_len:.3f},setpts=PTS-STARTPTS[mid];"
+            f"[seam][mid]concat=n=2:v=1[v]"
+        )
+        cmd = [ffmpeg, "-y", "-i", str(src), "-filter_complex", fc, "-map", "[v]", "-an",
+               "-c:v", "libx264", "-preset", preset, "-crf", str(crf), "-pix_fmt", "yuv420p", str(out)]
+    proc = subprocess.run(cmd, capture_output=True, text=True)
+    if proc.returncode != 0:
+        raise FFmpegError(f"シームレスループ化に失敗:\n{proc.stderr[-2000:]}")
     return out
 
 
